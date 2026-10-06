@@ -2,13 +2,14 @@
 
 Nothing in DOVSG_ROOT is modified. Only DROID-SLAM, its weights and the vendored ACE package are read from there.
 """
+import os
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DOVSG_ROOT = Path("/home/rivindu02/Documents/FYP/DovSG")
+DOVSG_ROOT = Path(os.environ.get("DOVSG_ROOT", "/home/rivindu02/Documents/FYP/DovSG"))
 
-DROID_PKG = DOVSG_ROOT / "third_party" / "DROID-SLAM" / "droid_slam"
-DROID_WEIGHTS = DOVSG_ROOT / "checkpoints" / "droid-slam" / "droid.pth"
+DROID_PKG = Path(os.environ.get("DROID_PKG", DOVSG_ROOT / "third_party" / "DROID-SLAM" / "droid_slam"))
+DROID_WEIGHTS = Path(os.environ.get("DROID_WEIGHTS", DOVSG_ROOT / "checkpoints" / "droid-slam" / "droid.pth"))
 
 DATA_DIR = HERE / "data"
 REPORT_DIR = HERE / "reports"
