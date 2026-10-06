@@ -3,7 +3,7 @@
 Replica room/office sequences cover a whole room with revisits, so they test loop closure and drift
 against exact ground truth. Rendered data has no sensor noise, so it is an easier case than a real ZED.
 Layout: <seq>/results/frame000000.jpg, depth000000.png (uint16, 6553.5 per metre), <seq>/traj.txt (c2w, row-major).
-Poses go to poses_zed/ (the reference slot) after converting from OpenGL to OpenCV camera axes.
+Poses go to poses_zed/ (the reference slot).
 """
 import cv2
 import numpy as np
@@ -44,10 +44,9 @@ for i in range(0, len(traj), args.stride):
     np.save(root / "point" / f"{name}.npy", backproject(d, K))
     np.save(root / "mask" / f"{name}.npy", valid_mask(d))
     np.savetxt(root / "calibration" / f"{name}.txt", K)
-    T = traj[i].copy()
-    T[:3, 1] *= -1          # OpenGL -> OpenCV camera axes (y down, z forward), as NICE-SLAM does
-    T[:3, 2] *= -1
-    np.savetxt(root / "poses_zed" / f"{name}.txt", T)
+    # traj.txt of this Replica copy is already camera-to-world with OpenCV axes (checked against DROID-SLAM:
+    # relative-rotation error 0.07 deg; flipping y and z, as some NICE-SLAM loaders do, gave 31 deg).
+    np.savetxt(root / "poses_zed" / f"{name}.txt", traj[i])
     saved += 1
     if args.max_frames and saved >= args.max_frames:
         break
