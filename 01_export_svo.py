@@ -82,7 +82,9 @@ while True:
         np.savetxt(root / "calibration" / f"{name}.txt", K)
         state = zed.get_position(pose, sl.REFERENCE_FRAME.WORLD)
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
-            np.savetxt(root / "poses_zed" / f"{name}.txt", np.array(pose.pose_data().m))
+            T = np.array(pose.pose_data().m)
+            T[:3, 3] /= 1000.0      # SDK reports translation in the init unit (millimetres here)
+            np.savetxt(root / "poses_zed" / f"{name}.txt", T)
         saved += 1
         if args.max_frames and saved >= args.max_frames:
             break
