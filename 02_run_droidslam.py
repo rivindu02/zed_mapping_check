@@ -67,10 +67,12 @@ def main():
             droid = Droid(args)
         droid.track(t, image, depth=depth, intrinsics=intr)
     # (N, 7) x y z qx qy qz qw, camera-to-world. Upstream DROID-SLAM's trajectory filler reads (t, image, intrinsics);
-    # DovSG's variant also reads depth. Try the depth form first, then fall back.
-    try:
+    # DovSG's variant also reads depth. terminate() consumes state, so pick the form before calling it.
+    import inspect
+    wants_depth = "depth" in inspect.getsource(type(droid.traj_filler).__call__)
+    if wants_depth:
         traj = droid.terminate(image_stream(root, names))
-    except ValueError:
+    else:
         traj = droid.terminate((t, im, k) for t, im, _, k in image_stream(root, names))
 
     out = root / "poses_droidslam"
