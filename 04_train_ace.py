@@ -34,6 +34,23 @@ out.parent.mkdir(parents=True, exist_ok=True)
 
 os.chdir(config.DOVSG_ROOT)             # ACE reads its configs with relative paths
 sys.path.insert(0, str(config.DOVSG_ROOT))
+
+# Newer PyTorch no longer sets optimizer._step_count, which ACE's trainer reads to detect skipped AMP steps.
+# Count real optimizer steps ourselves instead of editing the DovSG/ACE sources.
+import torch.optim as optim
+if not hasattr(optim.AdamW(__import__("torch").nn.Linear(1, 1).parameters()), "_step_count"):
+    _AdamW = optim.AdamW
+
+    class CountingAdamW(_AdamW):
+        _step_count = 0
+
+        def step(self, *a, **k):
+            out = super().step(*a, **k)
+            self._step_count += 1
+            return out
+
+    optim.AdamW = CountingAdamW
+
 from ace.train_ace import train_ace
 train_ace(tr.resolve(), out)
 print(f"ACE head saved to {out}")
