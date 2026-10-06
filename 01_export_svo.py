@@ -16,6 +16,7 @@ p = scene_args(__doc__)
 p.add_argument("--svo", required=True)
 p.add_argument("--depth_mode", default="NEURAL", choices=["NEURAL", "ULTRA", "QUALITY", "PERFORMANCE"])
 p.add_argument("--stride", type=int, default=config.STRIDE)
+p.add_argument("--max_width", type=int, default=config.MAX_WIDTH)
 p.add_argument("--max_frames", type=int, default=0, help="0 = all")
 args = p.parse_args()
 
@@ -63,7 +64,7 @@ while True:
         bgr = np.ascontiguousarray(img.get_data()[:, :, :3])
         depth_mm = np.nan_to_num(dep.get_data().astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0)
         h0, w0 = depth_mm.shape
-        s = min(1.0, config.MAX_WIDTH / w0)
+        s = min(1.0, args.max_width / w0)
         if s < 1.0:
             w1, h1 = int(round(w0 * s)), int(round(h0 * s))
             bgr = cv2.resize(bgr, (w1, h1), interpolation=cv2.INTER_AREA)
