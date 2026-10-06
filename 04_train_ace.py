@@ -12,24 +12,32 @@ from common import scene_args, scene_dir, frame_names
 
 p = scene_args(__doc__)
 p.add_argument("--holdout_every", type=int, default=config.HOLDOUT_EVERY)
+p.add_argument("--holdout_mode", choices=["interleave", "block"], default="interleave",
+               help="interleave: every Nth frame (easy, neighbours are in training). "
+                    "block: one contiguous ~10 percent segment (harder; only revisits help)")
+p.add_argument("--run", default="", help="suffix so several ACE runs can live side by side")
 args = p.parse_args()
 
 root = scene_dir(args.scene)
 names = [n for n in frame_names(root) if (root / "poses" / f"{n}.txt").exists()]
-held = {n for i, n in enumerate(names) if i % args.holdout_every == args.holdout_every // 2}
+if args.holdout_mode == "interleave":
+    held = {n for i, n in enumerate(names) if i % args.holdout_every == args.holdout_every // 2}
+else:
+    lo = int(len(names) * 0.45)
+    held = set(names[lo: lo + max(5, len(names) // 10)])
 train = [n for n in names if n not in held]
 
-tr = root / "ace_train"
+tr = root / f"ace_train{args.run}"
 if tr.exists():
     shutil.rmtree(tr)
 for sub, ext in [("rgb", "jpg"), ("poses", "txt"), ("calibration", "txt")]:
     (tr / sub).mkdir(parents=True)
     for n in train:
         os.symlink((root / sub / f"{n}.{ext}").resolve(), tr / sub / f"{n}.{ext}")
-(root / "heldout.txt").write_text("\n".join(sorted(held)))
+(root / f"heldout{args.run}.txt").write_text("\n".join(sorted(held)))
 print(f"train {len(train)} frames, held out {len(held)}")
 
-out = (root / "ace" / "ace.pt").resolve()
+out = (root / f"ace{args.run}" / "ace.pt").resolve()
 out.parent.mkdir(parents=True, exist_ok=True)
 
 os.chdir(config.DOVSG_ROOT)             # ACE reads its configs with relative paths

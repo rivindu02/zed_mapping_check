@@ -16,9 +16,11 @@ import config
 from common import (scene_args, scene_dir, frame_names, load_K, load_depth_m, load_pose,
                     backproject, valid_mask, to_world, rot_angle_deg, write_json)
 
-args = scene_args(__doc__).parse_args()
+p = scene_args(__doc__)
+p.add_argument("--run", default="")
+args = p.parse_args()
 root = scene_dir(args.scene)
-held = (root / "heldout.txt").read_text().split()
+held = (root / f"heldout{args.run}.txt").read_text().split()
 names = [n for n in frame_names(root) if (root / "poses" / f"{n}.txt").exists()]
 train = [n for n in names if n not in set(held)]
 
@@ -48,7 +50,7 @@ for n in held:
 os.chdir(config.DOVSG_ROOT)
 sys.path.insert(0, str(config.DOVSG_ROOT))
 from ace.test_ace import test_ace
-est = test_ace(str((root / "ace" / "ace.pt").resolve()), obs)
+est = test_ace(str((root / f"ace{args.run}" / "ace.pt").resolve()), obs)
 os.chdir(config.HERE)
 
 
@@ -104,5 +106,5 @@ summary = {
     "ace_icp_median_trans_m": float(np.median([r["icp_trans_m"] for r in rows])),
     "icp_success_rate": float(np.mean([r["icp_ok"] for r in rows])),
 }
-write_json(config.REPORT_DIR / f"{args.scene}_reloc.json", {"summary": summary, "frames": rows})
+write_json(config.REPORT_DIR / f"{args.scene}{args.run}_reloc.json", {"summary": summary, "frames": rows})
 print(summary)
