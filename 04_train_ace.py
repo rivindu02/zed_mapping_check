@@ -15,6 +15,8 @@ p.add_argument("--holdout_every", type=int, default=config.HOLDOUT_EVERY)
 p.add_argument("--holdout_mode", choices=["interleave", "block"], default="interleave",
                help="interleave: every Nth frame (easy, neighbours are in training). "
                     "block: one contiguous ~10 percent segment (harder; only revisits help)")
+p.add_argument("--buffer", type=int, default=0,
+               help="override ACE training_buffer_size (default 8M samples needs about 7.6 GB GPU); use 4000000 on a shared GPU")
 p.add_argument("--run", default="", help="suffix so several ACE runs can live side by side")
 args = p.parse_args()
 
@@ -58,6 +60,18 @@ if not hasattr(optim.AdamW(__import__("torch").nn.Linear(1, 1).parameters()), "_
             return out
 
     optim.AdamW = CountingAdamW
+
+if args.buffer:
+    import omegaconf
+    _load = omegaconf.OmegaConf.load
+
+    def _load_with_buffer(path, *a, **k):
+        cfg = _load(path, *a, **k)
+        if "training_buffer_size" in cfg:
+            cfg.training_buffer_size = args.buffer
+        return cfg
+
+    omegaconf.OmegaConf.load = _load_with_buffer
 
 from ace.train_ace import train_ace
 train_ace(tr.resolve(), out)
