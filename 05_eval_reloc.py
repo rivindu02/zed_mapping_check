@@ -43,7 +43,8 @@ target = target.voxel_down_sample(0.01)
 obs = {}
 for n in held:
     bgr = cv2.imread(str(root / "rgb" / f"{n}.jpg"))
-    obs[n] = {"rgb": (bgr[:, :, ::-1] / 255.0).astype(np.float32), "intrinsic": load_K(root, n)}
+    obs[n] = {"rgb": (bgr[:, :, ::-1] / 255.0).astype(np.float32), "intrinsic": load_K(root, n),
+              "depth": np.load(root / "depth" / f"{n}.npy"), "mask": np.load(root / "mask" / f"{n}.npy")}   # ACE's loader reads both
 os.chdir(config.DOVSG_ROOT)
 sys.path.insert(0, str(config.DOVSG_ROOT))
 from ace.test_ace import test_ace
