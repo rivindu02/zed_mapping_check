@@ -66,7 +66,12 @@ def main():
             args.image_size = [image.shape[2], image.shape[3]]
             droid = Droid(args)
         droid.track(t, image, depth=depth, intrinsics=intr)
-    traj = droid.terminate(image_stream(root, names))   # (N, 7) x y z qx qy qz qw, camera-to-world
+    # (N, 7) x y z qx qy qz qw, camera-to-world. Upstream DROID-SLAM's trajectory filler reads (t, image, intrinsics);
+    # DovSG's variant also reads depth. Try the depth form first, then fall back.
+    try:
+        traj = droid.terminate(image_stream(root, names))
+    except ValueError:
+        traj = droid.terminate((t, im, k) for t, im, _, k in image_stream(root, names))
 
     out = root / "poses_droidslam"
     out.mkdir(exist_ok=True)
